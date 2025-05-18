@@ -16,7 +16,6 @@ import frappe
 
 import magic
 
-
 class S3Operations(object):
 
     def __init__(self):
@@ -37,7 +36,8 @@ class S3Operations(object):
                 aws_access_key_id=self.s3_settings_doc.aws_key,
                 aws_secret_access_key=self.s3_settings_doc.aws_secret,
                 region_name=self.s3_settings_doc.region_name,
-                config=Config(signature_version='s3v4')
+                endpoint_url=self.s3_settings_doc.endpoint_url,
+                config=Config(s3={"addressing_style": "virtual"}, signature_version='v4')
             )
         else:
             self.S3_CLIENT = boto3.client(
