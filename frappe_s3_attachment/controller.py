@@ -116,6 +116,7 @@ class S3Operations(object):
                     file_path, self.BUCKET, key,
                     ExtraArgs={
                         "ContentType": content_type,
+                        "ACL": 'private',
                         "Metadata": {
                             "ContentType": content_type,
                             "file_name": file_name
@@ -130,7 +131,6 @@ class S3Operations(object):
                         "ACL": 'public-read',
                         "Metadata": {
                             "ContentType": content_type,
-
                         }
                     }
                 )
@@ -221,11 +221,10 @@ def file_upload_to_s3(doc, method):
             file_url, 'Home/Attachments', 'Home/Attachments', key, doc.name))
 
         doc.file_url = file_url
+        frappe.db.commit()
 
         if parent_doctype and frappe.get_meta(parent_doctype).get('image_field'):
             frappe.db.set_value(parent_doctype, parent_name, frappe.get_meta(parent_doctype).get('image_field'), file_url)
-
-        frappe.db.commit()
 
 
 @frappe.whitelist()
