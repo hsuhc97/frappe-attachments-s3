@@ -9,10 +9,11 @@
   "delete_file_from_cloud",
   "aws_credentials",
   "endpoint_url",
-  "bucket_name",
+  "file_url_prefix",
   "aws_key",
   "aws_secret",
   "section_break_7",
+  "bucket_name",
   "region_name",
   "folder_name",
   "signed_url_expiry_time",
@@ -85,11 +86,16 @@
    "fieldname": "endpoint_url",
    "fieldtype": "Data",
    "label": "Endpoint URL"
+  },
+  {
+   "fieldname": "file_url_prefix",
+   "fieldtype": "Data",
+   "label": "File URL Prefix"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2025-05-18 18:13:56.836524",
+ "modified": "2025-05-19 04:51:05.282982",
  "modified_by": "Administrator",
  "module": "Frappe S3 Attachment",
  "name": "S3 File Attachment",
