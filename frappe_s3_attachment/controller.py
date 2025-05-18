@@ -205,25 +205,26 @@ def file_upload_to_s3(doc, method):
             parent_name
         )
 
-        if doc.is_private:
-            method = "frappe_s3_attachment.controller.generate_file"
-            file_url = """/api/method/{0}?key={1}&file_name={2}""".format(method, key, doc.file_name)
-        else:
-            file_url = '{}/{}/{}'.format(
-                s3_upload.S3_CLIENT.meta.endpoint_url,
-                s3_upload.BUCKET,
-                key
-            )
+        # if doc.is_private:
+        #     method = "frappe_s3_attachment.controller.generate_file"
+        #     file_url = """/api/method/{0}?key={1}&file_name={2}""".format(method, key, doc.file_name)
+        # else:
+        file_url = '{}/{}/{}'.format(
+            s3_upload.S3_CLIENT.meta.endpoint_url,
+            s3_upload.BUCKET,
+            key
+        )
         os.remove(file_path)
         frappe.db.sql("""UPDATE `tabFile` SET file_url=%s, folder=%s,
             old_parent=%s, content_hash=%s WHERE name=%s""", (
             file_url, 'Home/Attachments', 'Home/Attachments', key, doc.name))
 
         doc.file_url = file_url
-        frappe.db.commit()
 
         if parent_doctype and frappe.get_meta(parent_doctype).get('image_field'):
             frappe.db.set_value(parent_doctype, parent_name, frappe.get_meta(parent_doctype).get('image_field'), file_url)
+        else:
+            frappe.db.commit()
 
 
 @frappe.whitelist()
