@@ -5,6 +5,7 @@ import os
 import random
 import re
 import string
+import urllib.parse
 
 import boto3
 
@@ -101,7 +102,7 @@ class S3Operations(object):
             return final_key
 
     def upload_files_to_s3_with_key(
-            self, file_path, file_name, is_private, parent_doctype, parent_name
+            self, file_path, file_name, parent_doctype, parent_name
     ):
         """
         Uploads a new file to S3.
@@ -111,28 +112,16 @@ class S3Operations(object):
         key = self.key_generator(file_name, parent_doctype, parent_name)
         content_type = mime_type
         try:
-            if is_private:
-                self.S3_CLIENT.upload_file(
-                    file_path, self.BUCKET, key,
-                    ExtraArgs={
+            self.S3_CLIENT.upload_file(
+                file_path, self.BUCKET, key,
+                ExtraArgs={
+                    "ContentType": content_type,
+                    "ACL": 'public-read',
+                    "Metadata": {
                         "ContentType": content_type,
-                        "ACL": 'public-read',
-                        "Metadata": {
-                            "ContentType": content_type,
-                        }
                     }
-                )
-            else:
-                self.S3_CLIENT.upload_file(
-                    file_path, self.BUCKET, key,
-                    ExtraArgs={
-                        "ContentType": content_type,
-                        "ACL": 'public-read',
-                        "Metadata": {
-                            "ContentType": content_type,
-                        }
-                    }
-                )
+                }
+            )
 
         except boto3.exceptions.S3UploadFailedError:
             frappe.throw(frappe._("File Upload Failed. Please try again."))
@@ -195,25 +184,18 @@ def file_upload_to_s3(doc, method):
     parent_name = doc.attached_to_name
     ignore_s3_upload_for_doctype = frappe.local.conf.get('ignore_s3_upload_for_doctype') or ['Data Import']
     if parent_doctype not in ignore_s3_upload_for_doctype:
-        if not doc.is_private:
-            file_path = site_path + '/public' + path
-        else:
-            file_path = site_path + path
+        file_path = site_path + '/public' + path
         key = s3_upload.upload_files_to_s3_with_key(
             file_path, doc.file_name,
-            doc.is_private, parent_doctype,
+            parent_doctype,
             parent_name
         )
 
-        if doc.is_private:
-            method = "frappe_s3_attachment.controller.generate_file"
-            file_url = """/api/method/{0}?key={1}&file_name={2}""".format(method, key, doc.file_name)
-        else:
-            file_url = 'https://{}.{}/{}'.format(
-                s3_upload.BUCKET,
-                s3_upload.S3_CLIENT.meta.endpoint_url.replace('https://', ''),
-                key
-            )
+        file_url = 'https://{}.{}/{}'.format(
+            s3_upload.BUCKET,
+            s3_upload.S3_CLIENT.meta.endpoint_url.replace('https://', ''),
+            key
+        )
         os.remove(file_path)
         frappe.db.sql("""UPDATE `tabFile` SET file_url=%s, folder=%s,
             old_parent=%s, content_hash=%s WHERE name=%s""", (
@@ -241,6 +223,16 @@ def generate_file(key=None, file_name=None):
     return
 
 
+@frappe.whitelist
+def parse_generated_url(url=None):
+    """
+    Function to parse the generated file.
+    """
+    parsed_url = urllib.parse.urlparse(url)
+    query_params = urllib.parse.parse_qs(parsed_url.query)
+    return query_params.get('key', [None])[0]
+
+
 def upload_existing_files_s3(name):
     """
     Function to upload all existing files.
@@ -253,10 +245,7 @@ def upload_existing_files_s3(name):
         site_path = frappe.utils.get_site_path()
         parent_doctype = doc.attached_to_doctype
         parent_name = doc.attached_to_name
-        if not doc.is_private:
-            file_path = site_path + '/public' + path
-        else:
-            file_path = site_path + path
+        file_path = site_path + '/public' + path
 
         # File exists?
         if not os.path.exists(file_path):
@@ -264,20 +253,15 @@ def upload_existing_files_s3(name):
 
         key = s3_upload.upload_files_to_s3_with_key(
             file_path, doc.file_name,
-            doc.is_private, parent_doctype,
+            parent_doctype,
             parent_name
         )
 
-        if doc.is_private:
-            method = "frappe_s3_attachment.controller.generate_file"
-            file_url = """/api/method/{0}?key={1}""".format(method, key)
-        else:
-            file_url = 'https://{}.{}/{}'.format(
-                s3_upload.BUCKET,
-                s3_upload.S3_CLIENT.meta.endpoint_url.replace('https://', ''),
-                key
-            )
-
+        file_url = 'https://{}.{}/{}'.format(
+            s3_upload.BUCKET,
+            s3_upload.S3_CLIENT.meta.endpoint_url.replace('https://', ''),
+            key
+        )
         # Remove file from local.
         os.remove(file_path)
 
