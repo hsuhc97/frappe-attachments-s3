@@ -183,7 +183,11 @@ def file_upload_to_s3(doc, method):
     parent_name = doc.attached_to_name
     ignore_s3_upload_for_doctype = frappe.local.conf.get('ignore_s3_upload_for_doctype') or ['Data Import']
     if parent_doctype not in ignore_s3_upload_for_doctype:
-        file_path = site_path + '/public' + path
+        if not doc.is_private:
+            file_path = site_path + '/public' + path
+        else:
+            file_path = site_path + path
+
         key = s3_upload.upload_files_to_s3_with_key(
             file_path, doc.file_name,
             parent_doctype,
@@ -244,7 +248,10 @@ def upload_existing_files_s3(name):
         site_path = frappe.utils.get_site_path()
         parent_doctype = doc.attached_to_doctype
         parent_name = doc.attached_to_name
-        file_path = site_path + '/public' + path
+        if not doc.is_private:
+            file_path = site_path + '/public' + path
+        else:
+            file_path = site_path + path
 
         # File exists?
         if not os.path.exists(file_path):
