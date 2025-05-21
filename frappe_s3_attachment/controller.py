@@ -5,7 +5,6 @@ import os
 import random
 import re
 import string
-import urllib.parse
 
 import boto3
 
