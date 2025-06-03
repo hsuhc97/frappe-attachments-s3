@@ -90,14 +90,14 @@ class S3Operations(object):
         if not doc_path:
             if self.folder_name:
                 final_key = self.folder_name + "/" + year + "/" + month + \
-                    "/" + day + "/" + parent_doctype + "/" + key + "_" + \
-                    file_name
+                    "/" + day + "/" + parent_doctype + "/" + file_name + "_" + \
+                    key
             else:
                 final_key = year + "/" + month + "/" + day + "/" + \
-                    parent_doctype + "/" + key + "_" + file_name
+                    parent_doctype + "/" + file_name + "_" + key
             return final_key
         else:
-            final_key = doc_path + '/' + key + "_" + file_name
+            final_key = doc_path + '/' + file_name + "_" + key
             return final_key
 
     def upload_files_to_s3_with_key(
