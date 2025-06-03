@@ -75,10 +75,16 @@ class S3Operations(object):
 
         file_name = file_name.replace(' ', '_')
         file_name = self.strip_special_chars(file_name)
+
+        # 分割文件名和后缀
+        basename, ext = os.path.splitext(file_name)
+
         key = ''.join(
             random.choice(
-                string.ascii_uppercase + string.digits) for _ in range(8)
+                string.ascii_uppercase + string.digits) for _ in range(4)
         )
+
+        new_filename = f"{basename}_{key}{ext}"
 
         today = datetime.datetime.now()
         year = today.strftime("%Y")
@@ -90,14 +96,13 @@ class S3Operations(object):
         if not doc_path:
             if self.folder_name:
                 final_key = self.folder_name + "/" + year + "/" + month + \
-                    "/" + day + "/" + parent_doctype + "/" + file_name + "_" + \
-                    key
+                    "/" + day + "/" + parent_doctype + "/" + new_filename
             else:
                 final_key = year + "/" + month + "/" + day + "/" + \
-                    parent_doctype + "/" + file_name + "_" + key
+                    parent_doctype + "/" + new_filename
             return final_key
         else:
-            final_key = doc_path + '/' + file_name + "_" + key
+            final_key = doc_path + '/' + new_filename
             return final_key
 
     def upload_files_to_s3_with_key(
